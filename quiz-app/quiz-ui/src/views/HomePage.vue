@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -7,68 +7,60 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 const playerName = ref('')
 const showQuiz = ref(false)
 
-const questions = [
-  {
-    id: 1,
-    text: "Lorem ipsum dolor sit amet consectetus est Lorem ipsum dolor sit amet consectetus est Lorem ipsum dolor sit amet consectetus est ?",
-    image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAAXNSR0IArs4c6QAAAHRJREFUGFcBaQCW/wGHA6L/7JzXAPriIQATvu4AP5TAAAFFTxT/x73EADr9uwDoc20AzULjAAGBXdX/DpyhAO1yMgACl40A0pirAAFsTTP/Zs5rAL+4sgC01XMAnxLMAAFaqY//tP3tAO88AQCwlyYAS4WkAN9MLqt2q2/jAAAAAElFTkSuQmCC",
-    options: [
-      "Petit texte.",
-      "Un texte un peu plus long pour tester l'affichage.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ac.",
-      "Option très courte."
-    ]
-  },
-  {
-    id: 2,
-    text: "Seconde question : lorem ipsum dolor sit amet ?",
-    image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAAXNSR0IArs4c6QAAAHRJREFUGFcBaQCW/wFFgkf/sM+MAFzjkQB1TbIA6pAUAAEaevb/AtlcAICLxwB+xLMA8xWyAAHMBMH/k1sAABBVjQAjxH4A+OUiAAFwJBD/M1/7APg1UgBtdicAc68PAAFr/5b/aUy+AK7pGgDlYV8AmqIVAPR5KgiQLIhgAAAAAElFTkSuQmCC",
-    options: [
-      "Réponse A",
-      "Réponse B avec un texte plus long pour voir le rendu.",
-      "Réponse C",
-      "Encore une réponse avec beaucoup de texte pour tester le comportement du composant sur plusieurs lignes. Lorem ipsum dolor sit amet."
-    ]
-  },
-  {
-    id: 3,
-    text: "Troisième question : lorem ipsum dolor sit amet ?",
-    image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAAXNSR0IArs4c6QAAAHRJREFUGFcBaQCW/wHtQnj/UydwAJeaJADFWEUAHDw3AAGX4OX/ec8xAN3F+gC0T7IAE1zSAAENAc7/kqDsAMP/xgD2zX0AxcvFAAHSVx//ribKAL/2DQBd2ywAsaXbAAFqyKX/LDjEAJeN0ABxWv0Awt6+AIHQL6w+Jg/nAAAAAElFTkSuQmCC",
-    options: [
-      "Réponse X",
-      "Réponse Y",
-      "Réponse Z",
-      "Réponse W"
-    ]
-  },
-  {
-    id: 4,
-    text: "Quatrième question : lorem ipsum dolor sit amet ?",
-    image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAAXNSR0IArs4c6QAAAHRJREFUGFcBaQCW/wFoVnf/B4mwAFlfcABswHAAODk2AAGpFp//MwIaANWIIADW/T0A+OwtAAGitYH/HM5+AAP0ZwBPCGIA5Jm6AAEiZ3T/jVPnAI0NJABfFywAC4MMAAHPalX/QdakANGOzwAfomQAlqnIAPWtJxu+AkejAAAAAElFTkSuQmCC",
-    options: [
-      "Réponse 1",
-      "Réponse 2",
-      "Réponse 3",
-      "Réponse 4"
-    ]
-  }
-]
+const question = ref(null)
+const loading = ref(false)
+const error = ref(null)
 
 const currentQuestion = ref(0)
-const answers = ref(Array(questions.length).fill(null))
+const totalQuestions = ref(0)
+const answers = ref(Array(totalQuestions.value).fill(null))
 const selectedOption = ref(null)
 
-// Remet la sélection temporaire quand on change de question
-watch(currentQuestion, (newIdx) => {
-  selectedOption.value = answers.value[newIdx]
+async function fetchQuestion(position) {
+  loading.value = true
+  error.value = null
+  try {
+    const res = await fetch(`http://127.0.0.1:5000/api/questions/quiz?position=${position + 1}`)
+    if (!res.ok) throw new Error('Erreur lors du chargement')
+    question.value = await res.json()
+  } catch (e) {
+    error.value = e.message
+    question.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+async function fetchTotalQuestions() {
+  try {
+    const res = await fetch('http://127.0.0.1:5000/api/questions/count')
+    if (!res.ok) throw new Error('Erreur lors du comptage')
+    const data = await res.json()
+    totalQuestions.value = data.count
+    answers.value = Array(totalQuestions.value).fill(null)
+  } catch (e) {
+    error.value = e.message
+    totalQuestions.value = 0
+  }
+}
+
+// Charger le nombre total de questions au montage
+onMounted(async () => {
+  await fetchTotalQuestions()
+})
+
+// Surveiller le changement de question pour charger la nouvelle question via l'API
+watch(currentQuestion, async (newIndex) => {
+  selectedOption.value = answers.value[newIndex]
+  await fetchQuestion(newIndex)
 })
 
 /**
  * Enregistre la réponse et passe à la question suivante
  */
-function nextQuestion() {
+async function nextQuestion() {
   answers.value[currentQuestion.value] = selectedOption.value
-  if (currentQuestion.value < questions.length - 1) {
+  if (currentQuestion.value < totalQuestions.value - 1) {
     currentQuestion.value++
   }
 }
@@ -76,21 +68,22 @@ function nextQuestion() {
 /**
  * Va à la question spécifiée si elle a déjà été répondue
  */
-function goToQuestion(idx) {
-  if (answers.value[idx] !== null) {
-    currentQuestion.value = idx
+function goToQuestion(index) {
+  if (answers.value[index] !== null) {
+    currentQuestion.value = index
   }
 }
 
 /**
  * Démarre le quiz si un nom d'utilisateur a été saisi
  */
-function startQuiz() {
+async function startQuiz() {
   if (playerName.value.trim() !== '') {
     showQuiz.value = true
     currentQuestion.value = 0
-    answers.value = Array(questions.length).fill(null)
+    answers.value = Array(totalQuestions.value).fill(null)
     selectedOption.value = null
+    await fetchQuestion(0)
   }
 }
 </script>
@@ -123,28 +116,30 @@ function startQuiz() {
             <CardTitle class="text-2xl mb-2">Lorem ipsum dolor (Theme du quiz)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div class="mb-4">
+            <div v-if="loading" class="text-center my-8">Chargement…</div>
+            <div v-else-if="error" class="text-red-500 my-8">{{ error }}</div>
+            <div v-else-if="question" class="mb-4">
               <div class="font-semibold mb-1">Question N°{{ currentQuestion + 1 }}</div>
               <img
-                v-if="questions[currentQuestion].image"
-                :src="questions[currentQuestion].image"
+                v-if="question.image"
+                :src="question.image"
                 alt="illustration"
                 class="w-full max-h-64 object-cover rounded my-4"
               />
-              <div class="mb-4">{{ questions[currentQuestion].text }}</div>
+              <div class="mb-4">{{ question.text }}</div>
               <RadioGroup v-model="selectedOption" class="space-y-4">
                 <div
-                  v-for="(option, idx) in questions[currentQuestion].options"
-                  :key="idx"
+                  v-for="(option, index) in question.answers"
+                  :key="option.id"
                   class="flex items-center space-x-4"
                 >
                   <RadioGroupItem
-                    :value="idx"
-                    :id="'option-' + idx"
+                    :value="index"
+                    :id="'option-' + index"
                     class="w-6 h-6 border-2 border-gray-300"
                   />
-                  <label :for="'option-' + idx" class="text-base cursor-pointer w-full">
-                    {{ option }}
+                  <label :for="'option-' + index" class="text-base cursor-pointer w-full">
+                    {{ option.text }}
                   </label>
                 </div>
               </RadioGroup>
@@ -168,17 +163,17 @@ function startQuiz() {
           </CardHeader>
           <CardContent class="space-y-3">
             <div
-              v-for="(q, idx) in questions"
-              :key="q.id"
+              v-for="index in totalQuestions"
+              :key="index"
               class="flex items-center justify-between px-4 py-3 rounded-lg transition-all"
               :class="{
-                'bg-gray-200 text-gray-400 cursor-not-allowed': answers[idx] === null,
-                'bg-white hover:bg-blue-100 cursor-pointer': answers[idx] !== null
+                'bg-gray-200 text-gray-400 cursor-not-allowed': answers[index - 1] === null,
+                'bg-white hover:bg-blue-100 cursor-pointer': answers[index - 1] !== null
               }"
-              @click="goToQuestion(idx)"
+              @click="goToQuestion(index - 1)"
             >
-              <span>Question N°{{ idx + 1 }}</span>
-              <span v-if="answers[idx] !== null" class="w-3 h-3 bg-green-700 rounded-full inline-block"></span>
+              <span>Question N°{{ index }}</span>
+              <span v-if="answers[index - 1] !== null" class="w-3 h-3 bg-green-700 rounded-full inline-block"></span>
             </div>
           </CardContent>
         </Card>
