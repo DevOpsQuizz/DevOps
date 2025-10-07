@@ -15,6 +15,9 @@ const currentQuestion = ref(0)
 const totalQuestions = ref(0)
 const answers = ref(Array(totalQuestions.value).fill(null))
 const selectedOption = ref(null)
+const isFinished = ref(false)
+const score = ref(0)
+const allQuestions = ref([]) // Stocke toutes les questions récupérées
 
 async function fetchQuestion(position) {
   loading.value = true
@@ -22,7 +25,9 @@ async function fetchQuestion(position) {
   try {
     const res = await fetch(`http://127.0.0.1:5000/api/questions/quiz?position=${position + 1}`)
     if (!res.ok) throw new Error('Erreur lors du chargement')
-    question.value = await res.json()
+    const query = await res.json()
+    question.value = query
+    allQuestions.value[position] = query
   } catch (e) {
     error.value = e.message
     question.value = null
@@ -56,20 +61,42 @@ watch(currentQuestion, async (newIndex) => {
 })
 
 /**
- * Enregistre la réponse et passe à la question suivante
+ * Enregistre la réponse et passe à la question suivante ou affiche le score si c'est la dernière
  */
 async function nextQuestion() {
   answers.value[currentQuestion.value] = selectedOption.value
   if (currentQuestion.value < totalQuestions.value - 1) {
     currentQuestion.value++
+  } else {
+    // Fin du quiz, calcul du score
+    isFinished.value = true
+    calculateScore()
+    saveParticipation()
   }
+}
+
+async function saveParticipation() {
+  await fetch('http://127.0.0.1:5000/api/participations/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      playerName: playerName.value,
+      score: score.value,
+      answers: answers.value.map((answerIdx, i) => {
+        // Récupère l'id de la réponse choisie pour chaque question
+        const question = allQuestions.value[i]
+        return question.answers[answerIdx]?.id
+      }),
+      idVersions: allQuestions.value[0]?.idVersions || 1 // adapte selon ta logique
+    })
+  })
 }
 
 /**
  * Va à la question spécifiée si elle a déjà été répondue
  */
 function goToQuestion(index) {
-  if (answers.value[index] !== null) {
+  if (answers.value[index] !== null && !isFinished.value) {
     currentQuestion.value = index
   }
 }
@@ -83,8 +110,30 @@ async function startQuiz() {
     currentQuestion.value = 0
     answers.value = Array(totalQuestions.value).fill(null)
     selectedOption.value = null
+    isFinished.value = false
+    score.value = 0
     await fetchQuestion(0)
   }
+}
+
+/**
+ * Calcule le score final
+ */
+function calculateScore() {
+  let total = 0
+  for (let i = 0; i < totalQuestions.value; i++) {
+    const question = allQuestions.value[i]
+    const answerIndex = answers.value[i]
+    if (
+      question &&
+      question.answers &&
+      question.answers[answerIndex] &&
+      question.answers[answerIndex].isCorrect
+    ) {
+      total++
+    }
+  }
+  score.value = total
 }
 </script>
 
@@ -109,7 +158,7 @@ async function startQuiz() {
     </div>
 
     <div v-else class="w-full">
-      <section class="flex flex-row p-12 space-x-8 items-start">
+      <section v-if="!isFinished" class="flex flex-row p-12 space-x-8 items-start">
         <!-- Bloc réponse aux questions -->
         <Card class="flex-1 max-w-2xl bg-gray-100">
           <CardHeader>
@@ -174,6 +223,18 @@ async function startQuiz() {
             >
               <span>Question N°{{ index }}</span>
               <span v-if="answers[index - 1] !== null" class="w-3 h-3 bg-green-700 rounded-full inline-block"></span>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+      <section v-else class="flex flex-col items-center justify-center min-h-[400px]">
+        <Card class="max-w-xl w-full bg-gray-100 p-8">
+          <CardHeader>
+            <CardTitle class="text-2xl mb-2">Résultat du quiz</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="text-xl text-center">
+              Vous avez <span class="font-bold text-green-700">{{ score }}</span> bonne(s) réponse(s) sur <span class="font-bold">{{ totalQuestions }}</span>.
             </div>
           </CardContent>
         </Card>
