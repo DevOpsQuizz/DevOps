@@ -1,10 +1,8 @@
-from routes.questions import quiz_questions_bp
-from flask import request, jsonify
 from db import SessionLocal
 from models import Questions
+from flask import request, jsonify
 from sqlalchemy.orm import selectinload
 
-@quiz_questions_bp.route("/quiz", methods=["GET"])
 def get_question_by_position():
     position = request.args.get("position", type=int)
     if position is None:
@@ -39,7 +37,6 @@ def get_question_by_position():
         "answers": answers
     })
 
-@quiz_questions_bp.route("/count", methods=["GET"])
 def count_questions():
     session = SessionLocal()
     count = session.query(Questions).count()
