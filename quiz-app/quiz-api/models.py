@@ -36,7 +36,7 @@ class Answers(Base):
     idQuestions: Mapped[int] = mapped_column(ForeignKey("questions.id"), nullable=False)
     text: Mapped[str] = mapped_column(String, nullable=False)
     isCorrect: Mapped[bool] = mapped_column(Boolean, default=False)
-    questionss: Mapped["Questions"] = relationship(back_populates="answers")
+    questions: Mapped["Questions"] = relationship(back_populates="answers")
 
 class Participations(Base):
     __tablename__ = "participations"
