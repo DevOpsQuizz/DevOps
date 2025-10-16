@@ -1,3 +1,4 @@
 .vscode/
 venv/
 quizz-app.db
+**/__pycache__/
