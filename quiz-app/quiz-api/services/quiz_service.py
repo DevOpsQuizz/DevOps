@@ -1,5 +1,6 @@
 from db import SessionLocal
 from models import Questions, Participations
+from flask import jsonify
 
 def get_quiz_info():
     session = SessionLocal()
@@ -7,6 +8,7 @@ def get_quiz_info():
         # Les questions
         questions = session.query(Questions).all()
         size = len(questions)
+        print("Quiz size:", size)
 
         # Participations
         participations = session.query(Participations).all()
@@ -19,13 +21,13 @@ def get_quiz_info():
             for p in participations
         ]
 
-        return {
+        return jsonify({
             "size": size,
             "scores": scores
-        }
+        }), 200
     except Exception as e:
-        return {
+        return jsonify({
             "error": str(e)
-        }
+        }), 500
     finally:
         session.close()

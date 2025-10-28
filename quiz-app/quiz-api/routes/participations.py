@@ -1,21 +1,20 @@
 from flask import Blueprint, request, jsonify
 from services.auth_service import admin_required
-from services.participations import delete_all_participations, add_participation
+from services.participations_service import delete_all_participations, add_participation
 
 participations_bp = Blueprint("participations", __name__, url_prefix="/participations")
 
 @participations_bp.route("/all", methods=["DELETE"])
 @admin_required
-def delete_all_participations():
+def delete_participations():
     return delete_all_participations()
 
-@participations_bp.route("/add", methods=["POST"])
+@participations_bp.route("/", methods=["POST"])
 def create_participation():
     data = request.get_json()
-    participation = add_participation(
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
+    return add_participation(
         playerName=data["playerName"],
-        score=data["score"],
-        answers=data["answers"],
-        idVersions=data["idVersions"]
+        answers=data["answers"]
     )
-    return jsonify({"message": "La participation au quiz a été enregistrée", "id": participation.id}), 201

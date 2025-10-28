@@ -4,15 +4,11 @@ from flask import request, jsonify
 from sqlalchemy.orm import selectinload
 from datetime import datetime
 
-def get_question_by_position():
-    position = request.args.get("position", type=int)
-    if position is None:
-        return jsonify({"error": "Missing 'position' parameter"}), 400
-
+def get_question_by_position(position):
     session = SessionLocal()
     question = session.query(Questions)\
         .options(selectinload(Questions.answers))\
-        .filter_by(position=position).first()
+        .filter_by(position=position).first() #TODO: add verification for idVersion later
 
     if question is None:
         session.close()
@@ -35,7 +31,7 @@ def get_question_by_position():
         "text": question.text,
         "image": question.image,
         "idVersions": question.idVersions,
-        "answers": answers
+        "possibleAnswers": answers
     })
 
 def count_questions():
@@ -67,16 +63,16 @@ def create_question(data):
         new_version = Versions(date=datetime.utcnow())
         session.add(new_version)
         session.commit()
-        id_versions = new_version.id
+        latest_version = new_version.id
     else:
-        id_versions = latest_version.id
+        latest_version = latest_version.id
 
     new_question = Questions(
         position=data["position"],
         title=data["title"],
         text=data.get("text"),
         image=data.get("image"),
-        idVersions=id_versions
+        idVersions=latest_version
     )
     session.add(new_question)
     session.commit()
