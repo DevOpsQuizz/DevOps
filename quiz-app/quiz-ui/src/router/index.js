@@ -3,6 +3,7 @@ import AdminLoginView from '@/views/AdminLoginView.vue'
 import UserLoginView from '@/views/UserLoginView.vue'
 import UserRegisterView from '@/views/UserRegisterView.vue'
 import HomePage from '../views/HomePage.vue'
+import AdminDashboardView from '@/views/AdminDashboardView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +27,11 @@ const router = createRouter({
       path: '/user/register',
       name: 'user-register',
       component: UserRegisterView,
+    },
+    {
+      path: '/admin/dashboard',
+      name: 'admin-dashboard',
+      component: AdminDashboardView,
     },
   ],
 })

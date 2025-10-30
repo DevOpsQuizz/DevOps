@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { getQuestion, getQuestionsCount, postParticipation } from '@/services/questions'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -102,8 +103,14 @@ function goToQuestion(index) {
 /**
  * Démarre le quiz si un nom d'utilisateur a été saisi
  */
+const router = useRouter()
 async function startQuiz() {
-  if (playerName.value.trim() !== '') {
+  const name = playerName.value.trim()
+  if (name !== '') {
+    if (name.toLowerCase() === 'admin') {
+      router.push('/admin/login')
+      return
+    }
     showQuiz.value = true
     currentQuestion.value = 0
     answers.value = Array(totalQuestions.value).fill(null)
@@ -160,7 +167,7 @@ function calculateScore() {
         <!-- Bloc réponse aux questions -->
         <Card class="flex-1 max-w-2xl bg-gray-100">
           <CardHeader>
-            <CardTitle class="text-2xl mb-2">Lorem ipsum dolor (Theme du quiz)</CardTitle>
+            <CardTitle class="text-2xl mb-2">{{ question?.title || '' }}</CardTitle>
           </CardHeader>
           <CardContent>
             <div v-if="loading" class="text-center my-8">Chargement…</div>
