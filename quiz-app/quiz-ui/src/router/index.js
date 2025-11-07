@@ -4,6 +4,7 @@ import UserLoginView from '@/views/UserLoginView.vue'
 import UserRegisterView from '@/views/UserRegisterView.vue'
 import HomePage from '../views/HomePage.vue'
 import AdminDashboardView from '@/views/AdminDashboardView.vue'
+import { validateAdminToken } from '@/services/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,6 +35,16 @@ const router = createRouter({
       component: AdminDashboardView,
     },
   ],
+})
+
+router.beforeEach(async (to, from, next) => {
+  if (to.name === 'admin-dashboard') {
+    const isValid = await validateAdminToken()
+    if (!isValid) {
+      return next({ name: 'admin-login' })
+    }
+  }
+  next()
 })
 
 export default router
