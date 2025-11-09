@@ -1,7 +1,7 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000'
 
 export async function loginAdmin(password) {
-  const url = `${API_BASE}/auth/login`
+  const url = `${API_BASE}/login/`
   console.log('POST ->', url)
   const res = await fetch(url, {
     method: 'POST',
@@ -41,4 +41,16 @@ export async function loginUser(mail, password) {
     throw new Error(txt || `HTTP ${res.status}`)
   }
   return (await res.json()).token
+}
+
+export async function validateAdminToken() {
+  const url = `${API_BASE}/validate-token/`
+  const adminToken = localStorage.getItem('admin_token')
+  if (!adminToken) return false
+
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${adminToken}` },
+  })
+  return res.ok
 }
