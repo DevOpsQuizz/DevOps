@@ -55,7 +55,7 @@ def rebuild_db():
     try:
         Base.metadata.drop_all(bind=engine)
         Base.metadata.create_all(bind=engine)
-        return {"message": "Database has been reset successfully."}, 200
+        return "Ok", 200
     except Exception as e:
         return {"error": f"Failed to reset database: {str(e)}"}, 500
 
