@@ -6,13 +6,23 @@ from datetime import datetime
 
 def get_question_by_position(position):
     session = SessionLocal()
-    question = session.query(Questions)\
-        .options(selectinload(Questions.answers))\
-        .filter_by(position=position).first() #TODO: add verification for idVersion later
+    question = (
+        session.query(Questions)
+        .filter(Questions.position == position)
+        .order_by(Questions.idVersions.desc())
+        .first()
+    )
 
     if question is None:
         session.close()
         return jsonify({"error": "Question not found"}), 404
+
+    answers_query = (
+        session.query(Answers)
+        .filter(Answers.idQuestions == question.id)
+        .order_by(Answers.id)
+        .all()
+    )
 
     answers = [
         {
@@ -20,8 +30,45 @@ def get_question_by_position(position):
             "text": answer.text,
             "isCorrect": answer.isCorrect
         }
-        for answer in question.answers
+        for answer in answers_query
     ]
+
+    session.close()
+
+    return jsonify({
+        "id": question.id,
+        "position": question.position,
+        "title": question.title,
+        "text": question.text,
+        "image": question.image,
+        "idVersions": question.idVersions,
+        "possibleAnswers": answers
+    })
+
+def get_question_by_id(question_id):
+    session = SessionLocal()
+    question = session.query(Questions).filter(Questions.id == question_id).first()
+
+    if question is None:
+        session.close()
+        return jsonify({"error": "Question not found"}), 404
+
+    answers_query = (
+        session.query(Answers)
+        .filter(Answers.idQuestions == question.id)
+        .order_by(Answers.id)
+        .all()
+    )
+
+    answers = [
+        {
+            "id": answer.id,
+            "text": answer.text,
+            "isCorrect": answer.isCorrect
+        }
+        for answer in answers_query
+    ]
+
     session.close()
 
     return jsonify({

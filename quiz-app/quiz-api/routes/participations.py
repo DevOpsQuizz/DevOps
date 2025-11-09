@@ -17,8 +17,6 @@ def create_participation():
 
     playerName = data.get("playerName")
     answers = data.get("answers")
-    score = data.get("score", None)
-    idVersions = data.get("idVersions", None)
 
     if not playerName:
         return jsonify({"error": "Missing playerName"}), 400
@@ -28,11 +26,9 @@ def create_participation():
     try:
         participation = add_participation(
             playerName=playerName,
-            answers=answers,
-            idVersions=idVersions,
-            score=score
+            answers=answers
         )
-        return jsonify({"message": "Participation enregistrée", "id": getattr(participation, "id", None)}), 201
+        return participation
     except Exception as e:
         current_app.logger.exception("create_participation failed: %s", e)
         return jsonify({"error": str(e)}), 500

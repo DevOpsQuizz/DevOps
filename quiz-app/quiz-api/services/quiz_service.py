@@ -11,7 +11,7 @@ def get_quiz_info():
         print("Quiz size:", size)
 
         # Participations
-        participations = session.query(Participations).all()
+        participations = session.query(Participations).order_by(Participations.score.desc()).all()
         scores = [
             {
                 "playerName": p.playerName,
