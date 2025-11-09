@@ -4,6 +4,7 @@ import UserLoginView from '@/views/UserLoginView.vue'
 import UserRegisterView from '@/views/UserRegisterView.vue'
 import HomePage from '../views/HomePage.vue'
 import AdminDashboardView from '@/views/AdminDashboardView.vue'
+import LeaderboardView from '@/views/LeaderboardView.vue'
 import { validateAdminToken } from '@/services/auth'
 
 const router = createRouter({
@@ -33,6 +34,11 @@ const router = createRouter({
       path: '/admin/dashboard',
       name: 'admin-dashboard',
       component: AdminDashboardView,
+    },
+    {
+      path: '/leaderboard',
+      name: 'leaderboard',
+      component: LeaderboardView,
     },
   ],
 })

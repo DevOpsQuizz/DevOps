@@ -2,10 +2,10 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getQuestion, getQuestionsCount, postParticipation } from '@/services/questions'
-import { getLeaderboard } from '@/services/leaderboard'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import Leaderboard from '@/components/ui/Leaderboard.vue'
 
 const LEADERBOARD_ITEMS_PER_PAGE = ref(10)
 
@@ -19,19 +19,12 @@ const apiError = ref(null) // erreurs réseau non-bloquantes
 
 const currentQuestion = ref(0)
 const totalQuestions = ref(0)
-const answers = ref([]) // index sélectionné par question (null = non validé)
+const answers = ref([]) 
 const selectedOption = ref(null)
 const isFinished = ref(false)
 const score = ref(0)
 const allQuestions = ref([]) // Stocke toutes les questions récupérées
 
-// Leaderboard
-const leaderboard = ref([])
-const leaderboardPage = ref(1)
-const leaderboardTotalPages = ref(1)
-const leaderboardLoading = ref(false)
-
-// fetch question and store into allQuestions[position] (doesn't change currentQuestion/question unless asked)
 async function fetchAndStoreQuestion(position) {
   try {
     const q = await getQuestion(position)
@@ -72,55 +65,26 @@ async function fetchTotalQuestions() {
  * Récupère les données du leaderboard
  */
 async function fetchLeaderboardData() {
-  leaderboardLoading.value = true
-  try {
-    const response = await getLeaderboard(leaderboardPage.value, LEADERBOARD_ITEMS_PER_PAGE.value)
-    console.log('Leaderboard data:', response)
-    
-    if (response.data) {
-      leaderboard.value = response.data
-      // Calculer le total d'entrées à partir du nombre de pages
-      leaderboardTotalPages.value = response.totalPages || 1
-    } else {
-      leaderboard.value = []
-      leaderboardTotalPages.value = 1
-    }
-    
-    console.log('Leaderboard processed:', leaderboard.value)
-    console.log('Total pages:', leaderboardTotalPages.value)
-  } catch (e) {
-    console.error('Erreur leaderboard:', e)
-    leaderboard.value = []
-    leaderboardTotalPages.value = 1
-  } finally {
-    leaderboardLoading.value = false
-  }
+  // Remplacé par le composant Leaderboard
 }
 
 /**
  * Change de page du leaderboard
  */
 async function changeLeaderboardPage(direction) {
-  if (direction === 'next' && leaderboardPage.value < leaderboardTotalPages.value) {
-    leaderboardPage.value++
-    await fetchLeaderboardData()
-  } else if (direction === 'prev' && leaderboardPage.value > 1) {
-    leaderboardPage.value--
-    await fetchLeaderboardData()
-  }
+  // Remplacé par le composant Leaderboard
 }
 
 /**
  * Calcule l'index de classement pour l'affichage
  */
 function getLeaderboardRank(index) {
-  return (leaderboardPage.value - 1) * LEADERBOARD_ITEMS_PER_PAGE.value + index + 1
+  // Remplacé par le composant Leaderboard
 }
 
 // Charger le nombre total de questions au montage
 onMounted(async () => {
   await fetchTotalQuestions()
-  await fetchLeaderboardData()
 })
 
 // Surveiller le changement de question pour charger la nouvelle question via l'API
@@ -133,8 +97,7 @@ watch(currentQuestion, async (newIndex) => {
  * Surveiller le changement du nombre d’éléments par page pour recharger le leaderboard
  */
 watch(LEADERBOARD_ITEMS_PER_PAGE, async () => {
-  leaderboardPage.value = 1
-  await fetchLeaderboardData()
+  // Remplacé par le composant Leaderboard
 })
 
 /**
@@ -282,68 +245,13 @@ const reviewList = computed(() => {
         <!-- Séparateur vertical -->
         <div class="hidden lg:block w-px bg-gray-300 self-stretch min-h-[400px]"></div>
 
-        <!-- Classement général -->
-        <div class="w-full lg:w-1/2 max-w-lg border border-gray-300 rounded-lg bg-white">
-          <div class="p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <h2 class="text-xl font-semibold text-center sm:text-left">Classement général</h2>
-            <!-- Sélecteur dynamique du nombre d’entrées -->
-            <div class="mt-4 sm:mt-0">
-              <label class="text-sm text-gray-600 mr-2">Éléments par page :</label>
-              <select
-                v-model="LEADERBOARD_ITEMS_PER_PAGE"
-                class="border border-gray-300 rounded px-2 py-1 text-sm"
-              >
-                <option :value="10">10</option>
-                <option :value="20">20</option>
-                <option :value="50">50</option>
-              </select>
-            </div>
-          </div>
-          <div class="p-6">
-            <div v-if="leaderboardLoading" class="text-center py-8 text-gray-600">
-              Chargement du classement...
-            </div>
-            <div v-else-if="leaderboard.length === 0" class="text-center py-8 text-gray-500">
-              Aucune participation pour le moment. Soyez le premier !
-            </div>
-            <div v-else class="space-y-3">
-              <div
-                v-for="(participant, index) in leaderboard"
-                :key="participant.id || index"
-                class="flex items-center justify-between px-5 py-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
-              >
-                <div class="flex items-center gap-4">
-                  <span class="text-2xl font-handwriting text-gray-600 min-w-[2.5rem] text-center">
-                    {{ getLeaderboardRank(index) }}
-                  </span>
-                  <span class="text-lg">{{ participant.playerName || participant.name || 'Anonyme' }}</span>
-                </div>
-                <span class="font-medium text-gray-700">{{ participant.score }}/{{ totalQuestions || '?' }}</span>
-              </div>
-              
-              <!-- Pagination -->
-              <div v-if="leaderboardTotalPages > 1" class="flex justify-center items-center gap-4 pt-6 mt-4 border-t border-gray-200">
-                <Button
-                  @click="changeLeaderboardPage('prev')"
-                  :disabled="leaderboardPage === 1"
-                  class="px-4 py-2"
-                >
-                  ← Précédent
-                </Button>
-                <span class="text-sm text-gray-600">
-                  Page {{ leaderboardPage }} / {{ leaderboardTotalPages }}
-                </span>
-                <Button
-                  @click="changeLeaderboardPage('next')"
-                  :disabled="leaderboardPage >= leaderboardTotalPages"
-                  class="px-4 py-2"
-                >
-                  Suivant →
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- Classement général via composant -->
+        <Leaderboard
+          :total-questions="totalQuestions"
+          title="Classement général"
+          :initial-items-per-page="LEADERBOARD_ITEMS_PER_PAGE"
+          :items-per-page-options="[10, 20, 50]"
+        />
       </div>
 
       <!-- Quiz -->
