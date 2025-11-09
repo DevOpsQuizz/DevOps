@@ -3,8 +3,8 @@ from flask import jsonify, request
 from jwt_utils import build_token, decode_token
 from functools import wraps
 
-# md5("admin") = 21232f297a57a5a743894a0e4a801fc3
-ADMIN_HASH_MD5 = "21232f297a57a5a743894a0e4a801fc3"
+# md5("iloveflask") = d278077bbfe7285a144d4b5b11adb9cf
+ADMIN_HASH_MD5 = "d278077bbfe7285a144d4b5b11adb9cf"
 
 
 def handle_admin_login(payload):
