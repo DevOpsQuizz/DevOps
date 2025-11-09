@@ -45,7 +45,7 @@ def add_participation(playerName, answers):
     session.add(participation)
     session.commit()
     session.close()
-    return jsonify({"message": "La participation au quiz a été enregistrée", "playerName": playerName, "score": score}), 201
+    return jsonify({"message": "La participation au quiz a été enregistrée", "playerName": playerName, "score": score}), 200
 
 def get_leaderboard_data(page=1, limit=20):
     """
