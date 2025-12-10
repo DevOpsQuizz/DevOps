@@ -1,4 +1,4 @@
-name: Postman API Tests
+name: UI Docker Image
 
 on:
   push:
