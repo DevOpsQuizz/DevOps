@@ -3,8 +3,10 @@ name: Postman API Tests
 on:
   push:
     branches: [ main ]
+  paths: ["quiz-app/quiz-api/**"]
   pull_request:
     branches: [ main ]
+    paths: ["quiz-app/quiz-api/**"]
 
 jobs:
   test-api:
@@ -53,7 +55,7 @@ jobs:
           npx newman run "tests/test_postman_collection.json" \
             --env-var "baseUrl=$BASE_URL" \
             --env-var "pwd=$ADMIN_PASSWORD"
-  build-docker:
+  build-docker-api:
     runs-on: ubuntu-latest
     needs: test-api
     steps:
@@ -70,12 +72,6 @@ jobs:
             -f quiz-app/quiz-api/Dockerfile \
             quiz-app/quiz-api
 
-      - name: Build frontend image
-        run: |
-          docker build \
-            -t quiz-ui:ci \
-            -f quiz-app/quiz-ui/Dockerfile \
-            quiz-app/quiz-ui
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -90,12 +86,5 @@ jobs:
           push: true
           tags: nassimm/quiz-api:latest
 
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v6
-        with:
-          context: quiz-app/quiz-ui
-          file: quiz-app/quiz-ui/Dockerfile
-          push: true
-          tags: nassimm/quiz-ui:latest
 
 
