@@ -20,7 +20,6 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 5000
-        # Pas besoin de variable d'environnement DATABASE_URL si tu gardes le chemin par défaut
         resources:
           requests:
             memory: "256Mi"
@@ -28,18 +27,6 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
-        # livenessProbe:
-        #   httpGet:
-        #     path: /health
-        #     port: 5000
-        #   initialDelaySeconds: 10
-        #   periodSeconds: 10
-        # readinessProbe:
-        #   httpGet:
-        #     path: /health
-        #     port: 5000
-        #   initialDelaySeconds: 5
-        #   periodSeconds: 5
 
 ---
 
